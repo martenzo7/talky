@@ -1,0 +1,249 @@
+#!/usr/bin/python3
+import _cffi_backend
+import wave
+import json
+import os
+import sys
+import argparse
+import subprocess
+
+ffi = _cffi_backend.FFI('vosk.vosk_cffi',
+    _version = 0x2601,
+    _types = b'\x00\x00\x04\x0D\x00\x00\x65\x03\x00\x00\x00\x0F\x00\x00\x1C\x0D\x00\x00\x60\x03\x00\x00\x0D\x01\x00\x00\x00\x0F\x00\x00\x0B\x0D\x00\x00\x01\x11\x00\x00\x00\x0F\x00\x00\x1F\x0D\x00\x00\x62\x03\x00\x00\x0D\x01\x00\x00\x00\x0F\x00\x00\x1F\x0D\x00\x00\x0B\x11\x00\x00\x0D\x01\x00\x00\x64\x03\x00\x00\x00\x0F\x00\x00\x1F\x0D\x00\x00\x0B\x11\x00\x00\x0D\x01\x00\x00\x01\x11\x00\x00\x00\x0F\x00\x00\x11\x0D\x00\x00\x01\x11\x00\x00\x00\x0F\x00\x00\x01\x0D\x00\x00\x61\x03\x00\x00\x00\x0F\x00\x00\x01\x0D\x00\x00\x63\x03\x00\x00\x00\x0F\x00\x00\x2B\x0D\x00\x00\x1C\x11\x00\x00\x00\x0F\x00\x00\x2B\x0D\x00\x00\x0B\x11\x00\x00\x01\x11\x00\x00\x00\x0F\x00\x00\x2B\x0D\x00\x00\x1F\x11\x00\x00\x01\x11\x00\x00\x07\x01\x00\x00\x00\x0F\x00\x00\x2B\x0D\x00\x00\x1F\x11\x00\x00\x05\x03\x00\x00\x07\x01\x00\x00\x00\x0F\x00\x00\x2B\x0D\x00\x00\x1F\x11\x00\x00\x66\x03\x00\x00\x07\x01\x00\x00\x00\x0F\x00\x00\x67\x0D\x00\x00\x04\x11\x00\x00\x00\x0F\x00\x00\x67\x0D\x00\x00\x1C\x11\x00\x00\x00\x0F\x00\x00\x67\x0D\x00\x00\x1C\x11\x00\x00\x01\x11\x00\x00\x07\x01\x00\x00\x00\x0F\x00\x00\x67\x0D\x00\x00\x1C\x11\x00\x00\x07\x01\x00\x00\x00\x0F\x00\x00\x67\x0D\x00\x00\x0B\x11\x00\x00\x00\x0F\x00\x00\x67\x0D\x00\x00\x1F\x11\x00\x00\x00\x0F\x00\x00\x67\x0D\x00\x00\x1F\x11\x00\x00\x11\x11\x00\x00\x00\x0F\x00\x00\x67\x0D\x00\x00\x1F\x11\x00\x00\x01\x11\x00\x00\x00\x0F\x00\x00\x67\x0D\x00\x00\x1F\x11\x00\x00\x07\x01\x00\x00\x00\x0F\x00\x00\x67\x0D\x00\x00\x11\x11\x00\x00\x00\x0F\x00\x00\x67\x0D\x00\x00\x07\x01\x00\x00\x00\x0F\x00\x00\x67\x0D\x00\x00\x00\x0F\x00\x00\x00\x09\x00\x00\x01\x09\x00\x00\x02\x09\x00\x00\x03\x09\x00\x00\x04\x09\x00\x00\x02\x01\x00\x00\x05\x01\x00\x00\x00\x01',
+    _globals = (b'\x00\x00\x37\x23vosk_batch_model_free',0,b'\x00\x00\x00\x23vosk_batch_model_new',0,b'\x00\x00\x37\x23vosk_batch_model_wait',0,b'\x00\x00\x3D\x23vosk_batch_recognizer_accept_waveform',0,b'\x00\x00\x3A\x23vosk_batch_recognizer_finish_stream',0,b'\x00\x00\x3A\x23vosk_batch_recognizer_free',0,b'\x00\x00\x1B\x23vosk_batch_recognizer_front_result',0,b'\x00\x00\x21\x23vosk_batch_recognizer_get_pending_chunks',0,b'\x00\x00\x03\x23vosk_batch_recognizer_new',0,b'\x00\x00\x3A\x23vosk_batch_recognizer_pop',0,b'\x00\x00\x42\x23vosk_batch_recognizer_set_nlsml',0,b'\x00\x00\x5E\x23vosk_gpu_init',0,b'\x00\x00\x5E\x23vosk_gpu_thread_init',0,b'\x00\x00\x24\x23vosk_model_find_word',0,b'\x00\x00\x46\x23vosk_model_free',0,b'\x00\x00\x07\x23vosk_model_new',0,b'\x00\x00\x28\x23vosk_recognizer_accept_waveform',0,b'\x00\x00\x2D\x23vosk_recognizer_accept_waveform_f',0,b'\x00\x00\x32\x23vosk_recognizer_accept_waveform_s',0,b'\x00\x00\x1E\x23vosk_recognizer_final_result',0,b'\x00\x00\x49\x23vosk_recognizer_free',0,b'\x00\x00\x0A\x23vosk_recognizer_new',0,b'\x00\x00\x13\x23vosk_recognizer_new_grm',0,b'\x00\x00\x0E\x23vosk_recognizer_new_spk',0,b'\x00\x00\x1E\x23vosk_recognizer_partial_result',0,b'\x00\x00\x49\x23vosk_recognizer_reset',0,b'\x00\x00\x1E\x23vosk_recognizer_result',0,b'\x00\x00\x50\x23vosk_recognizer_set_grm',0,b'\x00\x00\x54\x23vosk_recognizer_set_max_alternatives',0,b'\x00\x00\x54\x23vosk_recognizer_set_nlsml',0,b'\x00\x00\x54\x23vosk_recognizer_set_partial_words',0,b'\x00\x00\x4C\x23vosk_recognizer_set_spk_model',0,b'\x00\x00\x54\x23vosk_recognizer_set_words',0,b'\x00\x00\x5B\x23vosk_set_log_level',0,b'\x00\x00\x58\x23vosk_spk_model_free',0,b'\x00\x00\x18\x23vosk_spk_model_new',0),
+    _struct_unions = ((b'\x00\x00\x00\x60\x00\x00\x00\x10VoskBatchModel',),(b'\x00\x00\x00\x61\x00\x00\x00\x10VoskBatchRecognizer',),(b'\x00\x00\x00\x62\x00\x00\x00\x10VoskModel',),(b'\x00\x00\x00\x63\x00\x00\x00\x10VoskRecognizer',),(b'\x00\x00\x00\x64\x00\x00\x00\x10VoskSpkModel',)),
+    _typenames = (b'\x00\x00\x00\x60VoskBatchModel',b'\x00\x00\x00\x61VoskBatchRecognizer',b'\x00\x00\x00\x62VoskModel',b'\x00\x00\x00\x63VoskRecognizer',b'\x00\x00\x00\x64VoskSpkModel'),
+)
+def open_dll():
+    dlldir = os.path.abspath(os.path.dirname(__file__))
+    if sys.platform == "win32":
+        # We want to load dependencies too
+        os.environ["PATH"] = dlldir + os.pathsep + os.environ["PATH"]
+        if hasattr(os, "add_dll_directory"):
+            os.add_dll_directory(dlldir)
+        return ffi.dlopen(os.path.join(dlldir, "libvosk.dll"))
+    elif sys.platform == "linux":
+        return ffi.dlopen(os.path.join(dlldir, "libvosk.so"))
+    elif sys.platform == "darwin":
+        return ffi.dlopen(os.path.join(dlldir, "libvosk.dyld"))
+    else:
+        raise TypeError("Unsupported platform")
+_c = open_dll()
+def SetLogLevel(level):
+    return _c.vosk_set_log_level(level)
+
+class KaldiRecognizer:
+    def __init__(self, *args):
+        if len(args) == 2:
+            self._handle = _c.vosk_recognizer_new(args[0]._handle, args[1])
+        elif len(args) == 3 and isinstance(args[2], SpkModel):
+            self._handle = _c.vosk_recognizer_new_spk(args[0]._handle,
+                    args[1], args[2]._handle)
+        elif len(args) == 3 and isinstance(args[2], str):
+            self._handle = _c.vosk_recognizer_new_grm(args[0]._handle,
+                    args[1], args[2].encode("utf-8"))
+        else:
+            raise TypeError("Unknown arguments")
+
+        if self._handle == ffi.NULL:
+            raise Exception("Failed to create a recognizer")
+
+    def __del__(self):
+        _c.vosk_recognizer_free(self._handle)
+
+    def SetMaxAlternatives(self, max_alternatives):
+        _c.vosk_recognizer_set_max_alternatives(self._handle, max_alternatives)
+
+    def SetWords(self, enable_words):
+        _c.vosk_recognizer_set_words(self._handle, 1 if enable_words else 0)
+
+    def SetPartialWords(self, enable_partial_words):
+        _c.vosk_recognizer_set_partial_words(self._handle, 1 if enable_partial_words else 0)
+
+    def SetNLSML(self, enable_nlsml):
+        _c.vosk_recognizer_set_nlsml(self._handle, 1 if enable_nlsml else 0)
+
+    def SetSpkModel(self, spk_model):
+        _c.vosk_recognizer_set_spk_model(self._handle, spk_model._handle)
+
+    def SetGrammar(self, grammar):
+        _c.vosk_recognizer_set_grm(self._handle, grammar.encode("utf-8"))
+
+    def AcceptWaveform(self, data):
+        res = _c.vosk_recognizer_accept_waveform(self._handle, data, len(data))
+        if res < 0:
+            raise Exception("Failed to process waveform")
+        return res
+
+    def Result(self):
+        return ffi.string(_c.vosk_recognizer_result(self._handle)).decode("utf-8")
+
+    def PartialResult(self):
+        return ffi.string(_c.vosk_recognizer_partial_result(self._handle)).decode("utf-8")
+
+    def FinalResult(self):
+        return ffi.string(_c.vosk_recognizer_final_result(self._handle)).decode("utf-8")
+
+    def Reset(self):
+        return _c.vosk_recognizer_reset(self._handle)
+
+    def SrtResult(self, stream, words_per_line = 7):
+        results = []
+        while True:
+            data = stream.read(4000)
+            if len(data) == 0:
+                break
+            if self.AcceptWaveform(data):
+                results.append(self.Result())
+        results.append(self.FinalResult())
+        subs = []
+        for res in results:
+            jres = json.loads(res)
+            if not "result" in jres:
+                continue
+            words = jres["result"]
+            for j in range(0, len(words), words_per_line):
+                line = words[j : j + words_per_line]
+                s = srt.Subtitle(index=len(subs),
+                        content=" ".join([l["word"] for l in line]),
+                        start=datetime.timedelta(seconds=line[0]["start"]),
+                        end=datetime.timedelta(seconds=line[-1]["end"]))
+                subs.append(s)
+        return srt.compose(subs)
+
+
+class Model:
+    def __init__(self, model_path=None, model_name=None, lang=None):
+        if model_path is not None:
+            self._handle = _c.vosk_model_new(model_path.encode("utf-8"))
+        else:
+            model_path = self.get_model_path(model_name, lang)
+            self._handle = _c.vosk_model_new(model_path.encode("utf-8"))
+        if self._handle == ffi.NULL:
+            raise Exception("Failed to create a model")
+
+    def __del__(self):
+        _c.vosk_model_free(self._handle)
+
+    def vosk_model_find_word(self, word):
+        return _c.vosk_model_find_word(self._handle, word.encode("utf-8"))
+
+    def get_model_path(self, model_name, lang):
+        if model_name is None:
+            model_path = self.get_model_by_lang(lang)
+        else:
+            model_path = self.get_model_by_name(model_name)
+        return str(model_path)
+
+    def get_model_by_name(self, model_name):
+        for directory in MODEL_DIRS:
+            if directory is None or not Path(directory).exists():
+                continue
+            model_file_list = os.listdir(directory)
+            model_file = [model for model in model_file_list if model == model_name]
+            if model_file != []:
+                return Path(directory, model_file[0])
+        response = requests.get(MODEL_LIST_URL, timeout=10)
+        result_model = [model["name"] for model in response.json() if model["name"] == model_name]
+        if result_model == []:
+            print("model name %s does not exist" % (model_name))
+            sys.exit(1)
+        else:
+            self.download_model(Path(directory, result_model[0]))
+            return Path(directory, result_model[0])
+
+    def get_model_by_lang(self, lang):
+        for directory in MODEL_DIRS:
+            if directory is None or not Path(directory).exists():
+                continue
+            model_file_list = os.listdir(directory)
+            model_file = [model for model in model_file_list if
+                    match(r"vosk-model(-small)?-{}".format(lang), model)]
+            if model_file != []:
+                return Path(directory, model_file[0])
+        response = requests.get(MODEL_LIST_URL, timeout=10)
+        result_model = [model["name"] for model in response.json() if
+                model["lang"] == lang and model["type"] == "small" and model["obsolete"] == "false"]
+        if result_model == []:
+            print("lang %s does not exist" % (lang))
+            sys.exit(1)
+        else:
+            self.download_model(Path(directory, result_model[0]))
+            return Path(directory, result_model[0])
+
+    def download_model(self, model_name):
+        if not (model_name.parent).exists():
+            (model_name.parent).mkdir(parents=True)
+        with tqdm(unit="B", unit_scale=True, unit_divisor=1024, miniters=1,
+                desc=(MODEL_PRE_URL + str(model_name.name) + ".zip").rsplit("/",
+                    maxsplit=1)[-1]) as t:
+            reporthook = self.download_progress_hook(t)
+            urlretrieve(MODEL_PRE_URL + str(model_name.name) + ".zip",
+                    str(model_name) + ".zip", reporthook=reporthook, data=None)
+            t.total = t.n
+            with ZipFile(str(model_name) + ".zip", "r") as model_ref:
+                model_ref.extractall(model_name.parent)
+            Path(str(model_name) + ".zip").unlink()
+
+    def download_progress_hook(self, t):
+        last_b = [0]
+        def update_to(b=1, bsize=1, tsize=None):
+            if tsize not in (None, -1):
+                t.total = tsize
+            displayed = t.update((b - last_b[0]) * bsize)
+            last_b[0] = b
+            return displayed
+        return update_to
+
+def args():
+    parser = argparse.ArgumentParser(description='Talky Audio2Text or Speech2Text offine tool.')
+    parser.add_argument('--input_file', type=str, required=True, help='Path to the input media file. Ex: mp3 or mp4')
+    return parser.parse_args()
+# List all devices to find the index of your microphone
+#print(sd.query_devices())
+
+def ToWav(input_file):
+    try:
+        command = [
+            'ffmpeg', 
+            '-i', input_file,              # Input file
+            '-acodec', 'pcm_s16le',        # Audio codec
+            '-ac', '1',                    # Set number of audio channels to 1 (mono)
+            '-ar', '16000',                # Set audio sample rate to 16000 Hz
+            '/tmp/talky_out.wav',          # Output file
+            '-y'                           # Overwrite output file without asking
+        ]
+        subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
+    except subprocess.CalledProcessError as e:
+        print(f"Error occurred during conversion: {e}")
+        sys.exit(1)
+
+# Process the audio and get text output
+def Audio2Text():
+    file = '/tmp/talky_out.wav'
+    wf = wave.open(file, "rb")
+    # Ensure audio file is in correct format (mono and 16KHz)
+    if wf.getnchannels() != 1 or wf.getsampwidth() != 2 or wf.getframerate() != 16000:
+        raise Exception("Audio file must be WAV format mono PCM at 16kHz")
+    # Create recognizer object
+    recognizer = KaldiRecognizer(model, wf.getframerate())
+
+    print('starting...')
+    while True:
+        data = wf.readframes(4000)
+        if len(data) == 0:
+            break
+        if recognizer.AcceptWaveform(data):
+            result = recognizer.Result()
+            print(json.loads(result)["text"])
+    # Final result
+    print(json.loads(recognizer.FinalResult())["text"])
+
+if __name__ == "__main__":
+    args()
+    ToWav(args().input_file)
+    #Load the Vosk model
+    SetLogLevel(-1)
+    print("\33[34mLoading speech recognition model please wait...")
+    model = Model("/home/martenzo7/Downloads/model/")
+    Audio2Text()
