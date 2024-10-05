@@ -1,4 +1,5 @@
 NOTE: Still under development
+
 Project Overview: Talky is a simple Speech to Text and Media to Text Script
 
 In an era where effective communication and accessibility are paramount, the demand for reliable speech recognition technology continues to grow. This project, "Simple Speech to Text and Media to Text Script that Works Offline," aims to bridge the gap between voice and text conversion seamlessly and efficiently, all while ensuring complete functionality without the need for internet connectivity.
