@@ -1,11 +1,23 @@
 #!/usr/bin/python3
 import _cffi_backend
+from os.path import expanduser
 import wave
 import json
 import os
 import sys
 import argparse
+from argparse import RawTextHelpFormatter
 import subprocess
+import sounddevice as sd
+
+
+def talky_home():
+    path = expanduser("~")+'/.config/talky/'
+    if not os.path.exists(path):
+        os.mkdir(path)
+
+    else:
+        return path
 
 ffi = _cffi_backend.FFI('vosk.vosk_cffi',
     _version = 0x2601,
@@ -196,11 +208,12 @@ class Model:
         return update_to
 
 def args():
-    parser = argparse.ArgumentParser(description='Talky Audio2Text or Speech2Text offine tool.')
-    parser.add_argument('--input_file', type=str, required=True, help='Path to the input media file. Ex: mp3 or mp4')
+    parser = argparse.ArgumentParser(description='Talky is a simple Speech to Text and Media to Text Script\n\n\r\nIn an era where effective communication and accessibility are paramount, the demand for reliable speech recognition technology continues to grow. This project, "Simple Speech to Text and Media to Text Script that Works Offline," aims to bridge the gap between voice and text conversion seamlessly and efficiently, all while ensuring complete functionality without the need for internet connectivity.', formatter_class=RawTextHelpFormatter)
+    parser.add_argument('-v', '--verbose', type=int, default=0, choices=range(-1, 2), help="Verbose modes -1, 0 and 1 each has diffrent detailing level(default=0).")
+    parser.add_argument('-i', '--input_file', type=str, required=False, help='Path to the input media file. Ex: mp3 or mp4')
+    parser.add_argument('-l', '--list', action='store_true', help="List all connected microphones")
+    parser.parse_args(args=None if sys.argv[1:] else ['--help'])
     return parser.parse_args()
-# List all devices to find the index of your microphone
-#print(sd.query_devices())
 
 def ToWav(input_file):
     try:
@@ -228,7 +241,7 @@ def Audio2Text():
     # Create recognizer object
     recognizer = KaldiRecognizer(model, wf.getframerate())
 
-    print('starting...')
+    if args().verbose == 0: print('\33[34mstarting...\033[0;37;40m')
     while True:
         data = wf.readframes(4000)
         if len(data) == 0:
@@ -240,10 +253,15 @@ def Audio2Text():
     print(json.loads(recognizer.FinalResult())["text"])
 
 if __name__ == "__main__":
-    args()
-    ToWav(args().input_file)
-    #Load the Vosk model
-    SetLogLevel(-1)
-    print("\33[34mLoading speech recognition model please wait...")
-    model = Model("/home/martenzo7/Downloads/model/")
-    Audio2Text()
+    talky_home()
+    if args().verbose != 1:
+        SetLogLevel(-1)
+    if args().list:
+        #List all devices the microphones
+        print(sd.query_devices())
+    elif args().input_file:
+        ToWav(args().input_file)
+        #Load the Vosk model
+        if args().verbose == 0: print("\33[34mLoading speech recognition model please wait...\033[0;37;40m")
+        model = Model(talky_home()+"model")
+        Audio2Text()
