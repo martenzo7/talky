@@ -5,17 +5,28 @@ import wave
 import json
 import os
 import sys
+import queue
 import argparse
 from argparse import RawTextHelpFormatter
 import subprocess
 import sounddevice as sd
+from datetime import datetime
 
 
-def talky_home():
+q = queue.Queue()
+
+def args():
+    parser = argparse.ArgumentParser(description='Talky is a simple Speech to Text and Media to Text Script\n\n\r\nIn an era where effective communication and accessibility are paramount, the demand for reliable speech recognition technology continues to grow. This project, "Simple Speech to Text and Media to Text Script that Works Offline," aims to bridge the gap between voice and text conversion seamlessly and efficiently, all while ensuring complete functionality without the need for internet connectivity.', formatter_class=RawTextHelpFormatter)
+    parser.add_argument('-v', '--verbose', type=int, default=0, choices=range(-1, 2), help="Verbose modes -1, 0 and 1 each has diffrent detailing level(default=0).")
+    parser.add_argument('-f', '--file', type=str, required=False, help='Path to the input media file. Ex: mp3 or mp4')
+    parser.add_argument('-l', '--list', action='store_true', help="List all connected microphones")
+    parser.add_argument('-m', '--mic', type=int, default=None, help="Microphone index.")
+    return parser.parse_args()
+
+def home():
     path = expanduser("~")+'/.config/talky/'
     if not os.path.exists(path):
         os.mkdir(path)
-
     else:
         return path
 
@@ -123,7 +134,6 @@ class KaldiRecognizer:
                 subs.append(s)
         return srt.compose(subs)
 
-
 class Model:
     def __init__(self, model_path=None, model_name=None, lang=None):
         if model_path is not None:
@@ -207,19 +217,11 @@ class Model:
             return displayed
         return update_to
 
-def args():
-    parser = argparse.ArgumentParser(description='Talky is a simple Speech to Text and Media to Text Script\n\n\r\nIn an era where effective communication and accessibility are paramount, the demand for reliable speech recognition technology continues to grow. This project, "Simple Speech to Text and Media to Text Script that Works Offline," aims to bridge the gap between voice and text conversion seamlessly and efficiently, all while ensuring complete functionality without the need for internet connectivity.', formatter_class=RawTextHelpFormatter)
-    parser.add_argument('-v', '--verbose', type=int, default=0, choices=range(-1, 2), help="Verbose modes -1, 0 and 1 each has diffrent detailing level(default=0).")
-    parser.add_argument('-i', '--input_file', type=str, required=False, help='Path to the input media file. Ex: mp3 or mp4')
-    parser.add_argument('-l', '--list', action='store_true', help="List all connected microphones")
-    parser.parse_args(args=None if sys.argv[1:] else ['--help'])
-    return parser.parse_args()
-
-def ToWav(input_file):
+def ToWav(file):
     try:
         command = [
             'ffmpeg', 
-            '-i', input_file,              # Input file
+            '-i', file,              # Input file
             '-acodec', 'pcm_s16le',        # Audio codec
             '-ac', '1',                    # Set number of audio channels to 1 (mono)
             '-ar', '16000',                # Set audio sample rate to 16000 Hz
@@ -231,16 +233,17 @@ def ToWav(input_file):
         print(f"Error occurred during conversion: {e}")
         sys.exit(1)
 
-# Process the audio and get text output
 def Audio2Text():
     file = '/tmp/talky_out.wav'
     wf = wave.open(file, "rb")
     # Ensure audio file is in correct format (mono and 16KHz)
     if wf.getnchannels() != 1 or wf.getsampwidth() != 2 or wf.getframerate() != 16000:
         raise Exception("Audio file must be WAV format mono PCM at 16kHz")
+    #Load the Vosk model
+    if args().verbose == 0: print("\33[34mLoading speech recognition model please wait...\033[0;37;40m")
+    model = Model(home()+"model")
     # Create recognizer object
     recognizer = KaldiRecognizer(model, wf.getframerate())
-
     if args().verbose == 0: print('\33[34mstarting...\033[0;37;40m')
     while True:
         data = wf.readframes(4000)
@@ -252,16 +255,63 @@ def Audio2Text():
     # Final result
     print(json.loads(recognizer.FinalResult())["text"])
 
+def list_audio_devices(select: bool=False):
+    #List all microphones devices 
+    print("\33[34mAvailable audio devices:")
+    print(sd.query_devices())
+    if select == True:
+        device_index = int(input("\33[33mSelect the input device index: "))
+        return device_index
+
+def get_sample_rate(device_index):
+    try:
+        sample_rate = sd.query_devices(device_index, 'input')['default_samplerate']
+    except Exception:
+        print("\33[31mUnable to get sample rate, defaulting to 16kHz.")
+        sample_rate = 16000
+    return sample_rate
+
+def callback(indata, frames, time, status):
+    if status:
+        print(f"\33[31mStatus error: {status}", flush=True)
+    q.put(bytes(indata))
+
+def listen_and_transcribe(recognizer, sample_rate, device_index):
+    with sd.RawInputStream(samplerate=sample_rate, blocksize=4000, dtype='int16',
+                           channels=1, callback=callback, device=device_index):
+        print("\33[34mListening... Press Ctrl+C to stop.")
+        while True:
+            data = q.get()
+            if recognizer.AcceptWaveform(data):
+                result = recognizer.Result()
+                text = json.loads(result).get('text', '')
+                if text.strip():
+                    print(f"\33[31m{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}: \33[37m{text}")
+
+def main():
+    try:
+        home()
+        if args().list:
+            list_audio_devices()
+            sys.exit(1)
+        if args().verbose != 1:
+            SetLogLevel(-1)
+        if args().file:
+            ToWav(args().file)
+            Audio2Text()
+        else:
+            device_index = list_audio_devices(select=True) if args().mic is None else args().mic
+            sample_rate = get_sample_rate(device_index)
+            if args().verbose == 0: print("\33[34mLoading speech recognition model please wait...\033[0;37;40m")
+            model = Model(home()+"model")
+            recognizer = KaldiRecognizer(model, sample_rate)
+            listen_and_transcribe(recognizer, sample_rate, device_index)
+    except KeyboardInterrupt:
+        print("\n\33[31mTranscription stopped by user.")
+    except sd.PortAudioError as e:
+        print(f"\33[31mPortAudio error: {str(e)}. Try using a different microphone or adjust settings.")
+    except Exception as e:
+        print(f"\33[31mAn unexpected error occurred: {str(e)}")
+
 if __name__ == "__main__":
-    talky_home()
-    if args().verbose != 1:
-        SetLogLevel(-1)
-    if args().list:
-        #List all devices the microphones
-        print(sd.query_devices())
-    elif args().input_file:
-        ToWav(args().input_file)
-        #Load the Vosk model
-        if args().verbose == 0: print("\33[34mLoading speech recognition model please wait...\033[0;37;40m")
-        model = Model(talky_home()+"model")
-        Audio2Text()
+    main()
