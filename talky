@@ -9,6 +9,8 @@ import queue
 import argparse
 from argparse import RawTextHelpFormatter
 import subprocess
+from tqdm import tqdm
+import requests
 import sounddevice as sd
 from datetime import datetime
 
@@ -29,6 +31,18 @@ def home():
         os.mkdir(path)
     else:
         return path
+def download_models():
+    chunk_size = 1024
+    url = ""
+    r = requests.get(url, stream = True)
+    total_size = int(r.headers['content-length'])
+    filename = url.split('/')[-1]
+    with open('/tmp/'+filename, 'wb') as f:
+    	for data in tqdm(iterable = r.iter_content(chunk_size = chunk_size), total = total_size/chunk_size, unit = 'KB'):
+    		f.write(data)
+
+
+print("Download complete!")
 
 ffi = _cffi_backend.FFI('vosk.vosk_cffi',
     _version = 0x2601,
