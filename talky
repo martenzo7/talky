@@ -13,6 +13,7 @@ from tqdm import tqdm
 import requests
 import sounddevice as sd
 from datetime import datetime
+import zipfile
 
 
 q = queue.Queue()
@@ -25,6 +26,36 @@ def args():
     parser.add_argument('-m', '--mic', type=int, default=None, help="Microphone index.")
     return parser.parse_args()
 
+models = [
+    {
+        "name": "vosk-model-small-en-us-0.15",
+        "lang": "en",
+        "url": "https://alphacephei.com/vosk/models/vosk-model-small-en-us-0.15.zip"
+    },
+    {
+        "name": "vosk-model-en-us-0.22",
+        "lang": "en",
+        "url": "https://alphacephei.com/vosk/models/vosk-model-en-us-0.22.zip"
+    },
+    {
+        "name": "vosk-model-en-us-0.22-lgraph",
+        "lang": "en",
+        "url": "https://alphacephei.com/vosk/models/vosk-model-en-us-0.22-lgraph.zip"
+    },
+    {
+        "name": "vosk-model-en-us-0.42-gigaspeech",
+        "lang": "en",
+        "url": "https://alphacephei.com/vosk/models/vosk-model-en-us-0.42-gigaspeech.zip"
+    },
+]
+
+# Function to get URL by file name
+def get_url_by_model_name(name):
+    for model in models:
+        if model["name"] == name:
+            return model["url"]
+    return None  # Return None if the file name is not found
+
 def temp_dir():
     if os.name == 'posix':  # For Linux and Unix-like systems
         return '/tmp/'
@@ -33,23 +64,40 @@ def temp_dir():
     else:
         raise Exception('Unsupported Operating System')
 
-def home():
-    path = expanduser("~")+'/.config/talky/'
-    if not os.path.exists(path):
-        os.mkdir(path)
-    else:
-        return path
-
-def download_models():
+def download_models(model_url):
     chunk_size = 1024
-    url = ""
-    r = requests.get(url, stream = True)
+    r = requests.get(model_url, stream = True)
     total_size = int(r.headers['content-length'])
-    filename = url.split('/')[-1]
+    filename = model_url.split('/')[-1]
     with open(temp_dir()+filename, 'wb') as f:
     	for data in tqdm(iterable = r.iter_content(chunk_size = chunk_size), total = total_size/chunk_size, unit = 'KB'):
     		f.write(data)
     print("Download complete!")
+
+def unzip_model(model_zip):
+    try:
+        with zipfile.ZipFile(temp_dir()+model_zip+'.zip', 'r') as zip_ref:
+            zip_ref.extractall(home())
+            print(f"Extracted '{temp_dir()+model_zip}' to '{home()}'")
+        # Delete the model zip file after extraction
+        os.remove(temp_dir()+model_zip+'.zip')
+        print(f"Deleted the zip file: '{temp_dir()+model_zip+'.zip'}'")
+    except FileNotFoundError:
+        print(f"File not found: '{temp_dir()+model_zip+'.zip'}'")
+    except zipfile.BadZipFile:
+        print(f"Invalid zip file: '{temp_dir()+model_zip+'.zip'}'")
+    except Exception as e:
+        print(f"An error occurred: {e}")
+    pass
+
+def home():
+    path = expanduser("~")+'/.config/talky/'
+    if not os.path.exists(path):
+        os.mkdir(path)
+        download_models(get_url_by_model_name('vosk-model-small-en-us-0.15'))
+        unzip_model('vosk-model-small-en-us-0.15')
+    else:
+        return path
 
 ffi = _cffi_backend.FFI('vosk.vosk_cffi',
     _version = 0x2601,
@@ -88,7 +136,6 @@ class KaldiRecognizer:
                     args[1], args[2].encode("utf-8"))
         else:
             raise TypeError("Unknown arguments")
-
         if self._handle == ffi.NULL:
             raise Exception("Failed to create a recognizer")
 
