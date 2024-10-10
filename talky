@@ -52,6 +52,11 @@ models = [
         "lang": "cn",
         "url": "https://alphacephei.com/vosk/models/vosk-model-small-cn-0.22.zip"
     },
+    {
+        "name": "vosk-model-cn-0.22",
+        "lang": "cn",
+        "url": "https://alphacephei.com/vosk/models/vosk-model-cn-0.22.zip"
+    },
 ]
 
 # Function to get URL by file name
