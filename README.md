@@ -27,6 +27,7 @@ Technical Implementation
 The script utilizes advanced speech recognition algorithms and libraries that function effectively without relying on cloud-based services. By leveraging offline models, the application achieves high accuracy and responsiveness in real-time scenarios. The code is structured to ensure optimal performance, allowing for seamless integration into various operating systems, including Windows, macOS, and Linux.
 Use Cases
 
+
 - Content Creation: Bloggers, YouTubers, and podcasters can use the script to transcribe their spoken content into written format, streamlining the creation of captions, descriptions, and scripts.
 - Education: Students and educators can transcribe lectures and discussions, facilitating easier note-taking and study preparations.
 - Accessibility: The script aids individuals with hearing impairments by converting spoken content into readable text, enhancing their ability to engage with audio materials.
