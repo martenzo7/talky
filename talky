@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 import _cffi_backend
 from os.path import expanduser
 import wave
@@ -24,6 +24,7 @@ def args():
     parser.add_argument('-f', '--file', type=str, required=False, help='Path to the input media file. Ex: mp3 or mp4')
     parser.add_argument('-l', '--list', action='store_true', help="List all connected microphones")
     parser.add_argument('-m', '--mic', type=int, default=None, help="Microphone index.")
+    parser.add_argument('-M', '--model', type=int, default=0, help="Model index.")
     return parser.parse_args()
 
 models = [
@@ -381,7 +382,7 @@ def main():
             device_index = list_audio_devices(select=True) if args().mic is None else args().mic
             sample_rate = get_sample_rate(device_index)
             if args().verbose == 0: print("\33[34mLoading speech recognition model please wait...\033[0;37;40m")
-            model = Model(home()+"model")
+            model = Model(home()+"model" if args().model else home()+models[0]['name'])
             recognizer = KaldiRecognizer(model, sample_rate)
             listen_and_transcribe(recognizer, sample_rate, device_index)
     except KeyboardInterrupt:
