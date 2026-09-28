@@ -27,10 +27,6 @@
   <a href="mailto:martenzo7@proton.me"><img alt="Static Badge" src="https://img.shields.io/badge/Email-Contact%20me-D14836?logo=protonmail&logoColor=white"></a>
 </p>
 
-<p align="center">
-  <img src="assets/banner.png" alt="Talky banner — waveform turning into text" width="100%">
-</p>
-
 > ⚠️ **Still under active development.** Features, APIs, and usage may
 > change without notice. Not yet recommended for production use.
 
