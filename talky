@@ -14,12 +14,52 @@ import requests
 import sounddevice as sd
 from datetime import datetime
 import zipfile
+import shutil
+import random
 
 
 q = queue.Queue()
 
+
+
+RED = "\033[31m"
+CYAN = "\033[96m"
+DIM = "\033[2m"
+RESET = "\033[0m"
+
+TIPS = [
+    "Tip: use -l to list connected microphones before picking one with -m.",
+    "Tip: -v 1 gives verbose output if a transcription looks off.",
+    "Tip: grab more languages at https://alphacephei.com/vosk/models",
+    "Tip: works fully offline -- no internet connection required.",
+]
+
+VERSION = "0.1.0-dev"
+
+
+def print_banner():
+    try:
+        import pyfiglet
+        art = pyfiglet.figlet_format("TALKY", font="slant")
+    except ImportError:
+        art = r"""
+ _____     _ _
+|_   _|_ _| | | ___   _
+  | |/ _` | | |/ / | | |
+  | | (_| | |   <| |_| |
+  |_|\__,_|_|_|\_\__, |
+                  |___/
+"""
+    width = shutil.get_terminal_size((80, 20)).columns
+    print(RED + art + RESET)
+    print(CYAN + "  Offline Speech & Media to Text".ljust(max(width - 12, 0)) + f"v{VERSION}" + RESET)
+    print(DIM + "-" * min(width, 60) + RESET)
+    print(DIM + "  " + random.choice(TIPS) + RESET)
+    print(DIM + "-" * min(width, 60) + RESET)
+    print()
+
 def args():
-    parser = argparse.ArgumentParser(description='Talky is a simple Speech to Text and Media to Text Script\n\n\r\nIn an era where effective communication and accessibility are paramount, the demand for reliable speech recognition technology continues to grow. This project, "Simple Speech to Text and Media to Text Script that Works Offline," aims to bridge the gap between voice and text conversion seamlessly and efficiently, all while ensuring complete functionality without the need for internet connectivity.', formatter_class=RawTextHelpFormatter)
+    parser = argparse.ArgumentParser(description='Simple, fully offline Speech-to-Text and Media-to-Text tool.', formatter_class=RawTextHelpFormatter)
     parser.add_argument('-v', '--verbose', type=int, default=0, choices=range(-1, 2), help="Verbose modes -1, 0 and 1 each has diffrent detailing level(default=0).")
     parser.add_argument('-f', '--file', type=str, required=False, help='Path to the input media file. Ex: mp3 or mp4')
     parser.add_argument('-l', '--list', action='store_true', help="List all connected microphones")
@@ -392,5 +432,10 @@ def main():
     except Exception as e:
         print(f"\33[31mAn unexpected error occurred: {str(e)}")
 
+
 if __name__ == "__main__":
+    no_args = len(sys.argv) == 1
+    help_requested = any(a in sys.argv for a in ("-h", "--help"))
+    if no_args or help_requested:
+        print_banner()
     main()
